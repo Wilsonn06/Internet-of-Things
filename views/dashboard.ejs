@@ -37,6 +37,20 @@
           <p class="air-quality">Air Quality : 90 (Cukup)</p>
         </div>
       </div>
+
+      <div class="coba_test">
+        <p>Message that will get: <strong id="message"><%= message %></strong></p>
+      </div>
+      <script>
+        setInterval(() => {
+          fetch('/')
+            .then(response => response.text())
+            .then(html => {
+              document.querySelector('#message').innerHTML = 
+                new DOMParser().parseFromString(html, 'text/html').querySelector('#message').innerHTML;
+            });
+        }, 1000); // Poll the server every second for updates
+      </script>
     </div>
   </div>
 </body>
