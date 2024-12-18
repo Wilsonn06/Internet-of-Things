@@ -1,0 +1,76 @@
+/* Reset dasar */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0d1b2a;
+    color: white;
+  }
+  
+  .container {
+    display: flex;
+    height: 100vh;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 200px;
+    background-color: #1b263b;
+    padding: 20px;
+  }
+  
+  .sidebar h2 {
+    color: #48cae4;
+  }
+  
+  .sidebar p {
+    margin: 10px 0;
+    color: #90e0ef;
+  }
+  
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    background-color: #0d1b2a;
+    padding: 20px;
+  }
+  
+  /* Sensor Cards */
+  .sensor-card {
+    background-color: #1b263b;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #415a77;
+    font-weight: bold;
+  }
+  
+  .card-content {
+    padding: 10px 15px;
+  }
+  
+  .sensor-name {
+    color: #caf0f8;
+  }
+  
+  .location {
+    margin: 0;
+    font-size: 1.1em;
+  }
+  
+  .air-quality {
+    margin: 5px 0 0;
+    font-size: 0.9em;
+    color: #48cae4;
+  }
+  
+  .dropdown {
+    cursor: pointer;
+  }
+  
