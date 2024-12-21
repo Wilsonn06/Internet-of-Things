@@ -4,7 +4,7 @@ import serial
 # MQTT broker details
 broker = "broker.emqx.io"
 port = 1883
-topic = "/nodejs/mqtt"
+topic = "MQ135/sensor1"
 username = "emqx"
 password = "public"
 

@@ -29,9 +29,9 @@ let latestMessage = 'No messages yet';
 // MQTT Client Event Handlers
 client.on('connect', () => {
   console.log('Connected to MQTT broker');
-  client.subscribe('/nodejs/mqtt', (err) => {
+  client.subscribe('MQ135/sensor1', (err) => {
     if (!err) {
-      console.log('Subscribed to topic: /nodejs/mqtt');
+      console.log('Subscribed to topic: MQ135/sensor1');
     }
   });
 });
