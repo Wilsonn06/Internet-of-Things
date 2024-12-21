@@ -25,6 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Variable to store the latest message
 let latestMessage = 'No messages yet';
+let parsedData = { co2: 0, nh3: 0, nox: 0 };
 
 // MQTT Client Event Handlers
 client.on('connect', () => {
@@ -39,11 +40,29 @@ client.on('connect', () => {
 client.on('message', (topic, message) => {
   console.log(`Message received on topic ${topic}: ${message.toString()}`);
   latestMessage = message.toString(); // Update the latest message
+
+  // Parse the message to extract CO2, NH3, and NOx values
+  const regex = /CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)/;
+  const match = latestMessage.match(regex);
+  if (match) {
+    parsedData = {
+      co2: parseFloat(match[1]),
+      nh3: parseFloat(match[2]),
+      nox: parseFloat(match[3]),
+    };
+  }
 });
 
 // Route ke halaman dashboard
 app.get('/', (req, res) => {
-  res.render('dashboard', { message: latestMessage });
+  res.render('dashboard', { 
+    message: latestMessage,
+    data: parsedData
+  });
+});
+
+app.get('/api/data', (req, res) => {
+  res.json(parsedData);
 });
 
 // Jalankan server

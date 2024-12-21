@@ -23,7 +23,9 @@
         </div>
         <div class="card-content">
           <p class="location">Kantin A</p>
-          <p class="air-quality">Air Quality : 101 (Bagus)</p>
+          <p>CO2 = <span id="co2-value"><%= data.co2 %></span></p>
+          <p>NH3 = <span id="nh3-value"><%= data.nh3 %></span></p>
+          <p>NOx = <span id="nox-value"><%= data.nox %></span></p>
         </div>
       </div>
 
@@ -50,6 +52,16 @@
                 new DOMParser().parseFromString(html, 'text/html').querySelector('#message').innerHTML;
             });
         }, 1000); // Poll the server every second for updates
+        setInterval(() => {
+        fetch('/api/data')
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById('co2-value').textContent = data.co2;
+            document.getElementById('nh3-value').textContent = data.nh3;
+            document.getElementById('nox-value').textContent = data.nox;
+          })
+          .catch((error) => console.error('Error fetching data:', error));
+      }, 1000);
       </script>
     </div>
   </div>
