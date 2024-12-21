@@ -4,12 +4,12 @@ import serial
 # MQTT broker details
 broker = "broker.emqx.io"
 port = 1883
-topic = "MQ135/sensor1"
+topic = "MQ135/sensor2"
 username = "emqx"
 password = "public"
 
 # Serial port details (update with your Arduino's port and baud rate)
-arduino_port = "COM3"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
+arduino_port = "COM10"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
 baud_rate = 9600
 
 try:

@@ -11,11 +11,11 @@
     <!-- Sidebar -->
     <div class="sidebar">
       <h2>Dashboard</h2>
-      <!-- <p>+ Sensor</p> -->
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
+      <!-- Sensor 1 -->
       <div class="sensor-card">
         <div class="card-header">
           <span class="sensor-name">MQ-135</span>
@@ -23,7 +23,19 @@
         </div>
         <div class="card-content">
           <p class="location">Kantin A</p>
-          <p class="air-quality">Air Quality : 101 (Bagus)</p>
+          <p class="air-quality">Air Quality: <strong id="sensor1"><%= messages.sensor1 %></strong></p>
+        </div>
+      </div>
+
+      <!-- Sensor 2 -->
+      <div class="sensor-card">
+        <div class="card-header">
+          <span class="sensor-name">MQ-135</span>
+          <span class="dropdown">▼</span>
+        </div>
+        <div class="card-content">
+          <p class="location">Kantin B</p>
+          <p class="air-quality">Air Quality: <strong id="sensor2"><%= messages.sensor2 %></strong></p>
         </div>
       </div>
 
@@ -33,25 +45,30 @@
           <span class="dropdown">▼</span>
         </div>
         <div class="card-content">
-          <p class="location">Kantin B</p>
-          <p class="air-quality">Air Quality : 90 (Cukup)</p>
+          <p class="location">Kantin C</p>
+          <p class="air-quality">Air Quality: <strong id="sensor3"><%= messages.sensor3 %></strong></p>
         </div>
       </div>
 
-      <div class="coba_test">
-        <p>Message that will get: <strong id="message"><%= message %></strong></p>
+      <!-- <div class="coba_test">
+        <p>Latest Message: <strong id="latest-message"><%= messages.sensor1 %>, <%= messages.sensor2 %></strong></p>
       </div>
-      <script>
-        setInterval(() => {
-          fetch('/')
-            .then(response => response.text())
-            .then(html => {
-              document.querySelector('#message').innerHTML = 
-                new DOMParser().parseFromString(html, 'text/html').querySelector('#message').innerHTML;
-            });
-        }, 1000); // Poll the server every second for updates
-      </script>
-    </div>
+    </div> -->
   </div>
+
+  <!-- Auto-refresh Script -->
+  <script>
+    setInterval(() => {
+      fetch('/')
+        .then(response => response.json()) // Backend should now return JSON
+        .then(data => {
+          // Update content dynamically
+          document.querySelector('#sensor1').textContent = data.messages.sensor1 || 'No data';
+          document.querySelector('#sensor2').textContent = data.messages.sensor2 || 'No data';
+          document.querySelector('#sensor3').textContent = data.messages.sensor3 || 'No data';
+          document.querySelector('#latest-message').textContent = `${data.messages.sensor1 || 'No data'}, ${data.messages.sensor2 || 'No data'}`;
+        });
+    }, 1000); // Poll the server every second for updates
+  </script>
 </body>
 </html>
