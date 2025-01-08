@@ -10,7 +10,7 @@ username = "emqx"
 password = "public"
 
 # Location name (can be changed as needed)
-location_name = "lapangan futsal OBC"
+location_name = "lokasi 1"
 
 # Serial port details (update with your Arduino's port and baud rate)
 arduino_port = "COM5"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
