@@ -1,23 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Head section remains the same until template -->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sensor Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Custom animations */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
     .sensor-card {
       animation: fadeIn 0.3s ease-out;
     }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-  <!-- Navbar -->
+  <!-- Navbar remains the same -->
   <nav class="bg-white shadow-lg">
     <div class="container mx-auto px-6 py-4">
       <div class="flex items-center justify-between">
@@ -27,15 +23,39 @@
           </svg>
           <span class="ml-3 text-xl font-semibold text-gray-800">Sensor Dashboard</span>
         </div>
-        <div class="text-gray-600 text-sm">
-          Real-time Monitoring
-        </div>
+        <div class="text-gray-600 text-sm">Real-time Monitoring</div>
       </div>
     </div>
   </nav>
 
-  <!-- Main Content -->
+  <!-- Average Values Card -->
   <div class="container mx-auto p-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Rata-rata Nilai Gas</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 rounded-lg p-3">
+          <div class="text-sm text-gray-600 mb-1">Rata-rata CO₂</div>
+          <div class="flex items-baseline">
+            <span id="avg-co2" class="text-2xl font-bold text-blue-600">0</span>
+            <span class="ml-1 text-sm text-gray-500">ppm</span>
+          </div>
+        </div>
+        <div class="bg-green-50 rounded-lg p-3">
+          <div class="text-sm text-gray-600 mb-1">Rata-rata NH₃</div>
+          <div class="flex items-baseline">
+            <span id="avg-nh3" class="text-2xl font-bold text-green-600">0</span>
+            <span class="ml-1 text-sm text-gray-500">ppm</span>
+          </div>
+        </div>
+        <div class="bg-red-50 rounded-lg p-3">
+          <div class="text-sm text-gray-600 mb-1">Rata-rata NOx</div>
+          <div class="flex items-baseline">
+            <span id="avg-nox" class="text-2xl font-bold text-red-600">0</span>
+            <span class="ml-1 text-sm text-gray-500">ppm</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="sensorContainer">
     </div>
   </div>
@@ -52,14 +72,21 @@
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-800">MQ-135</h3>
-              <p class="text-sm text-gray-500 location"></p>
+              <div class="flex items-center">
+                <input type="text" class="location text-sm text-gray-500 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none transition-colors duration-200" />
+                <button class="edit-location ml-2 text-blue-500 hover:text-blue-600">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-          <span class="text-gray-400 hover:text-gray-600 transition-colors duration-200 cursor-pointer">▼</span>
         </div>
       </div>
       
       <div class="p-4 space-y-4">
+        <!-- Rest of the sensor values template remains the same -->
         <div class="co2-value bg-blue-50 rounded-lg p-3">
           <div class="text-sm text-gray-600 mb-1">Carbon Dioxide (CO₂)</div>
           <div class="flex items-baseline">
@@ -88,11 +115,16 @@
   </template>
 
   <script>
-    const locations = {
+    // Store locations in localStorage to persist changes
+    let locations = JSON.parse(localStorage.getItem('sensorLocations')) || {
       sensor1: "Kantin A",
       sensor2: "Kantin B",
       sensor3: "Kantin C"
     };
+
+    function saveLocations() {
+      localStorage.setItem('sensorLocations', JSON.stringify(locations));
+    }
 
     function updateSensorValue(element, value) {
       try {
@@ -107,6 +139,32 @@
       }
     }
 
+    function calculateAverages(sensorData) {
+      let totals = { co2: 0, nh3: 0, nox: 0 };
+      let counts = { co2: 0, nh3: 0, nox: 0 };
+
+      Object.values(sensorData).forEach(data => {
+        if (data) {
+          if (data.co2 != null) { totals.co2 += data.co2; counts.co2++; }
+          if (data.nh3 != null) { totals.nh3 += data.nh3; counts.nh3++; }
+          if (data.nox != null) { totals.nox += data.nox; counts.nox++; }
+        }
+      });
+
+      return {
+        co2: counts.co2 ? (totals.co2 / counts.co2).toFixed(1) : 0,
+        nh3: counts.nh3 ? (totals.nh3 / counts.nh3).toFixed(1) : 0,
+        nox: counts.nox ? (totals.nox / counts.nox).toFixed(1) : 0
+      };
+    }
+
+    function updateAverages(sensorData) {
+      const averages = calculateAverages(sensorData);
+      document.getElementById('avg-co2').textContent = averages.co2;
+      document.getElementById('avg-nh3').textContent = averages.nh3;
+      document.getElementById('avg-nox').textContent = averages.nox;
+    }
+
     function createSensorCard(sensorId, data) {
       try {
         const template = document.getElementById('sensorCardTemplate');
@@ -117,9 +175,18 @@
 
         const card = template.content.cloneNode(true);
         
-        const locationElement = card.querySelector('.location');
-        if (locationElement) {
-          locationElement.textContent = locations[sensorId];
+        const locationInput = card.querySelector('.location');
+        if (locationInput) {
+          locationInput.value = locations[sensorId];
+          locationInput.setAttribute('data-sensor-id', sensorId);
+          
+          // Add event listeners for location editing
+          locationInput.addEventListener('change', (e) => {
+            const newLocation = e.target.value;
+            const sensorId = e.target.getAttribute('data-sensor-id');
+            locations[sensorId] = newLocation;
+            saveLocations();
+          });
         }
         
         updateSensorValue(card.querySelector('.co2-value'), data.co2);
@@ -151,6 +218,8 @@
             }
           }
         });
+
+        updateAverages(sensorData);
       } catch (error) {
         console.error('Error updating dashboard:', error);
       }
