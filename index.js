@@ -22,47 +22,78 @@ app.set('views', './views');
 // Akses file statis (CSS)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Variables to store the latest messages
-let messages = {
-  sensor1: 'No messages yet from sensor1',
-  sensor2: 'No messages yet from sensor2',
-  sensor3: 'No messages yet from sensor3',
+// Object to store sensor data with timestamps
+const sensorData = {
+  sensor1: { data: null, lastUpdate: 0 },
+  sensor2: { data: null, lastUpdate: 0 },
+  sensor3: { data: null, lastUpdate: 0 }
 };
+
+// Timeout duration for considering sensor data as stale (in milliseconds)
+const DATA_TIMEOUT = 5000; // 5 seconds
 
 // MQTT Client Event Handlers
 client.on('connect', () => {
   console.log('Connected to MQTT broker');
-  client.subscribe('MQ135/sensor1', (err) => {
-    if (!err) {
-      console.log('Subscribed to topic: MQ135/sensor1');
-    }
-  });
-  client.subscribe('MQ135/sensor2', (err) => {
-    if (!err) {
-      console.log('Subscribed to topic: MQ135/sensor2');
-    }
-  });
-  client.subscribe('MQ135/sensor3', (err) => {
-    if (!err) {
-      console.log('Subscribed to topic: MQ135/sensor3');
-    }
+  ['MQ135/sensor1', 'MQ135/sensor2', 'MQ135/sensor3'].forEach((topic) => {
+    client.subscribe(topic, (err) => {
+      if (!err) {
+        console.log(`Subscribed to topic: ${topic}`);
+      }
+    });
   });
 });
 
 client.on('message', (topic, message) => {
   console.log(`Message received on topic ${topic}: ${message.toString()}`);
-  if (topic === 'MQ135/sensor1') {
-    messages.sensor1 = message.toString();
-  } else if (topic === 'MQ135/sensor2') {
-    messages.sensor2 = message.toString();
-  } else if (topic === 'MQ135/sensor3') {
-    messages.sensor3 = message.toString();
+  
+  // Parse the message to extract CO2, NH3, and NOx values
+  const regex = /CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)/;
+  const match = message.toString().match(regex);
+  
+  if (match) {
+    const parsedData = {
+      co2: parseFloat(match[1]),
+      nh3: parseFloat(match[2]),
+      nox: parseFloat(match[3])
+    };
+
+    // Update the respective sensor data with timestamp
+    const sensorId = topic.split('/')[1]; // Extract sensor1, sensor2, or sensor3
+    if (sensorData[sensorId]) {
+      sensorData[sensorId] = {
+        data: parsedData,
+        lastUpdate: Date.now()
+      };
+    }
   }
 });
 
 // Route ke halaman dashboard
 app.get('/', (req, res) => {
-  res.render('dashboard', { messages });
+  const activeData = getActiveSensorData();
+  res.render('dashboard', { data: activeData });
+});
+
+// Function to get only active sensor data
+function getActiveSensorData() {
+  const currentTime = Date.now();
+  const activeData = {};
+
+  Object.entries(sensorData).forEach(([sensorId, sensorInfo]) => {
+    if (sensorInfo.data && (currentTime - sensorInfo.lastUpdate) < DATA_TIMEOUT) {
+      activeData[sensorId] = sensorInfo.data;
+    }
+  });
+
+  return activeData;
+}
+
+// Modified API endpoint to return only active sensor data
+app.get('/api/data', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const activeData = getActiveSensorData();
+  res.json(activeData);
 });
 
 // Jalankan server
