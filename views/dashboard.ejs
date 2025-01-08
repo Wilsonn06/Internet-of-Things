@@ -6,13 +6,17 @@
   <title>Sensor Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Custom animations */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
     .sensor-card {
       animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .warning-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
   </style>
 </head>
@@ -55,7 +59,19 @@
               <p class="text-sm text-gray-500 location"></p>
             </div>
           </div>
-          <span class="text-gray-400 hover:text-gray-600 transition-colors duration-200 cursor-pointer">▼</span>
+          <div class="bg-purple-50 rounded-lg px-3 py-2">
+            <div class="text-sm text-gray-600">Average</div>
+            <div class="text-xl font-bold text-purple-600 sensor-avg">-</div>
+          </div>
+        </div>
+        <!-- Warning Alert -->
+        <div class="warning-alert hidden">
+          <div class="bg-red-50 p-4 flex items-center space-x-2">
+            <svg class="h-6 w-6 text-red-600 warning-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <span class="text-red-700 font-medium">Your environment is dangerous!</span>
+          </div>
         </div>
       </div>
       
@@ -88,11 +104,16 @@
   </template>
 
   <script>
-    const locations = {
-      sensor1: "Kantin A",
-      sensor2: "Kantin B",
-      sensor3: "Kantin C"
-    };
+    
+
+    const DANGER_THRESHOLD = 0.7;
+
+    function calculateSensorAverage(data) {
+      const values = [data.co2, data.nh3, data.nox].filter(val => val != null && !isNaN(val));
+      if (values.length === 0) return '-';
+      const average = values.reduce((a, b) => a + b, 0) / values.length;
+      return average.toFixed(1);
+    }
 
     function updateSensorValue(element, value) {
       try {
@@ -104,6 +125,18 @@
         }
       } catch (error) {
         console.error('Error updating sensor value:', error);
+      }
+    }
+
+    function updateWarningStatus(cardElement, average) {
+      const warningAlert = cardElement.querySelector('.warning-alert');
+      if (parseFloat(average) > DANGER_THRESHOLD) {
+        warningAlert.classList.remove('hidden');
+        // Add red border to the card when in danger state
+        cardElement.classList.add('border-2', 'border-red-500');
+      } else {
+        warningAlert.classList.add('hidden');
+        cardElement.classList.remove('border-2', 'border-red-500');
       }
     }
 
@@ -119,9 +152,17 @@
         
         const locationElement = card.querySelector('.location');
         if (locationElement) {
-          locationElement.textContent = locations[sensorId];
+          locationElement.textContent = data.location || 'Unknown Location';
         }
         
+        // Calculate and update the overall average
+        const sensorAvg = calculateSensorAverage(data);
+        card.querySelector('.sensor-avg').textContent = sensorAvg;
+        
+        // Update warning status
+        updateWarningStatus(card.querySelector('.sensor-card'), sensorAvg);
+        
+        // Update individual values
         updateSensorValue(card.querySelector('.co2-value'), data.co2);
         updateSensorValue(card.querySelector('.nh3-value'), data.nh3);
         updateSensorValue(card.querySelector('.nox-value'), data.nox);

@@ -47,25 +47,25 @@ client.on('connect', () => {
 client.on('message', (topic, message) => {
   console.log(`Message received on topic ${topic}: ${message.toString()}`);
   
-  // Parse the message to extract CO2, NH3, and NOx values
-  const regex = /CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)/;
-  const match = message.toString().match(regex);
-  
-  if (match) {
-    const parsedData = {
-      co2: parseFloat(match[1]),
-      nh3: parseFloat(match[2]),
-      nox: parseFloat(match[3])
-    };
-
-    // Update the respective sensor data with timestamp
+  try {
+    // Parse the JSON message
+    const messageData = JSON.parse(message.toString());
+    
+    // Update the respective sensor data with timestamp and include location
     const sensorId = topic.split('/')[1]; // Extract sensor1, sensor2, or sensor3
     if (sensorData[sensorId]) {
       sensorData[sensorId] = {
-        data: parsedData,
+        data: {
+          co2: messageData.co2,
+          nh3: messageData.nh3,
+          nox: messageData.nox,
+          location: messageData.location
+        },
         lastUpdate: Date.now()
       };
     }
+  } catch (error) {
+    console.error('Error parsing message:', error);
   }
 });
 

@@ -1,15 +1,19 @@
 import paho.mqtt.client as mqtt
 import serial
+import json
 
 # MQTT broker details
 broker = "broker.emqx.io"
 port = 1883
-topic = "MQ135/sensor2"
+topic = "MQ135/sensor1"
 username = "emqx"
 password = "public"
 
+# Location name (can be changed as needed)
+location_name = "lapangan futsal OBC"
+
 # Serial port details (update with your Arduino's port and baud rate)
-arduino_port = "COM10"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
+arduino_port = "COM5"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
 baud_rate = 9600
 
 try:
@@ -37,9 +41,29 @@ try:
             arduino_message = ser.readline().decode('utf-8').strip()
             print(f"Message from Arduino: {arduino_message}")
             
-            # Publish the Arduino message to the MQTT broker
-            client.publish(topic, arduino_message)
-            print(f"Published '{arduino_message}' to topic '{topic}'")
+            # Parse the existing message format
+            regex = r"CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)"
+            import re
+            match = re.match(regex, arduino_message)
+            
+            if match:
+                # Create a dictionary with both sensor data and location
+                message_dict = {
+                    "location": location_name,
+                    "co2": float(match.group(1)),
+                    "nh3": float(match.group(2)),
+                    "nox": float(match.group(3))
+                }
+                
+                # Convert to JSON string
+                json_message = json.dumps(message_dict)
+                
+                # Publish the JSON message to the MQTT broker
+                client.publish(topic, json_message)
+                print(f"Published data with location to topic '{topic}'")
+            else:
+                print("Failed to parse Arduino message")
+            
 except Exception as e:
     print(f"Failed to connect or publish: {e}")
 finally:
