@@ -67,7 +67,8 @@ client.on('message', (topic, message) => {
     // Update the respective sensor data
     if (topic === 'MQ135/sensor1') {
       sensorData.sensor1 = parsedData;
-    } else if (topic === 'MQ135/sensor2') {
+    } 
+    else if (topic === 'MQ135/sensor2') {
       sensorData.sensor2 = parsedData;
     } else if (topic === 'MQ135/sensor3'){
       sensorData.sensor3 = parsedData;
