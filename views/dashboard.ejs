@@ -116,7 +116,9 @@
   <script>
     const DANGER_THRESHOLD = 0.7;
     const MAX_DATA_POINTS = 10;
+    const SENSOR_TIMEOUT = 100;
     const charts = new Map();
+    const lastUpdated = new Map();
 
     function createChart(canvas) {
       return new Chart(canvas, {
@@ -231,30 +233,45 @@
     }
 
     function updateDashboard(sensorData) {
-      const container = document.getElementById('sensorContainer');
-      
-      Object.entries(sensorData).forEach(([sensorId, data]) => {
-        let cardElement = document.getElementById(`sensor-${sensorId}`);
-        
-        if (!cardElement) {
-          const card = createSensorCard(sensorId, data);
-          container.appendChild(card);
-          cardElement = document.getElementById(`sensor-${sensorId}`);
-        } else {
-          const chart = charts.get(sensorId);
-          updateChart(chart, data);
-          
-          const sensorAvg = calculateSensorAverage(data);
-          cardElement.querySelector('.sensor-avg').textContent = sensorAvg;
-          
-          updateWarningStatus(cardElement, sensorAvg);
-          
-          updateSensorValue(cardElement.querySelector('.co2-value'), data.co2);
-          updateSensorValue(cardElement.querySelector('.nh3-value'), data.nh3);
-          updateSensorValue(cardElement.querySelector('.nox-value'), data.nox);
-        }
-      });
+  const container = document.getElementById('sensorContainer');
+  const currentTime = Date.now();
+  
+  // Remove stale sensors
+  Array.from(lastUpdated.entries()).forEach(([sensorId, lastUpdate]) => {
+    if (currentTime - lastUpdate > SENSOR_TIMEOUT && !sensorData[sensorId]) {
+      const staleCard = document.getElementById(`sensor-${sensorId}`);
+      if (staleCard) {
+        staleCard.remove();
+        charts.delete(sensorId);
+        lastUpdated.delete(sensorId);
+      }
     }
+  });
+  
+  // Update active sensors
+  Object.entries(sensorData).forEach(([sensorId, data]) => {
+    lastUpdated.set(sensorId, currentTime);
+    let cardElement = document.getElementById(`sensor-${sensorId}`);
+    
+    if (!cardElement) {
+      const card = createSensorCard(sensorId, data);
+      container.appendChild(card);
+      cardElement = document.getElementById(`sensor-${sensorId}`);
+    } else {
+      const chart = charts.get(sensorId);
+      updateChart(chart, data);
+      
+      const sensorAvg = calculateSensorAverage(data);
+      cardElement.querySelector('.sensor-avg').textContent = sensorAvg;
+      
+      updateWarningStatus(cardElement, sensorAvg);
+      
+      updateSensorValue(cardElement.querySelector('.co2-value'), data.co2);
+      updateSensorValue(cardElement.querySelector('.nh3-value'), data.nh3);
+      updateSensorValue(cardElement.querySelector('.nox-value'), data.nox);
+    }
+  });
+}
 
     async function fetchData() {
       try {
