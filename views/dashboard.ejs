@@ -5,23 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sensor Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
   <style>
     .sensor-card {
       animation: fadeIn 0.3s ease-out;
     }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
-    
     .warning-pulse {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .chart-container {
+      position: relative;
+      height: 200px;
+      width: 100%;
+      margin: 20px 0;
     }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-  <!-- Navbar -->
+  <!-- Navbar remains the same -->
   <nav class="bg-white shadow-lg">
     <div class="container mx-auto px-6 py-4">
       <div class="flex items-center justify-between">
@@ -31,26 +36,24 @@
           </svg>
           <span class="ml-3 text-xl font-semibold text-gray-800">Sensor Dashboard</span>
         </div>
-        <div class="text-gray-600 text-sm">
-          Real-time Monitoring
-        </div>
+        <div class="text-gray-600 text-sm">Real-time Monitoring</div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
   <div class="container mx-auto p-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="sensorContainer">
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="sensorContainer"></div>
   </div>
 
   <template id="sensorCardTemplate">
     <div class="sensor-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+      <!-- Header section remains the same -->
       <div class="border-b border-gray-100">
         <div class="flex items-center justify-between p-4">
           <div class="flex items-center space-x-3">
             <div class="bg-blue-100 rounded-lg p-2">
-              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
               </svg>
             </div>
@@ -64,10 +67,9 @@
             <div class="text-xl font-bold text-purple-600 sensor-avg">-</div>
           </div>
         </div>
-        <!-- Warning Alert -->
         <div class="warning-alert hidden">
           <div class="bg-red-50 p-4 flex items-center space-x-2">
-            <svg class="h-6 w-6 text-red-600 warning-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="h-6 w-6 text-red-600 warning-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
             </svg>
             <span class="text-red-700 font-medium">Your environment is dangerous!</span>
@@ -75,6 +77,14 @@
         </div>
       </div>
       
+      <!-- Add Chart Container -->
+      <div class="p-4">
+        <div class="chart-container">
+          <canvas class="sensor-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Sensor Values -->
       <div class="p-4 space-y-4">
         <div class="co2-value bg-blue-50 rounded-lg p-3">
           <div class="text-sm text-gray-600 mb-1">Carbon Dioxide (CO₂)</div>
@@ -104,9 +114,66 @@
   </template>
 
   <script>
-    
-
     const DANGER_THRESHOLD = 0.7;
+    const MAX_DATA_POINTS = 10;
+    const charts = new Map();
+
+    function createChart(canvas) {
+      return new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'CO₂',
+              borderColor: '#3B82F6',
+              data: [],
+              tension: 0.4
+            },
+            {
+              label: 'NH₃',
+              borderColor: '#10B981',
+              data: [],
+              tension: 0.4
+            },
+            {
+              label: 'NOx',
+              borderColor: '#EF4444',
+              data: [],
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          animation: {
+            duration: 300
+          }
+        }
+      });
+    }
+
+    function updateChart(chart, data) {
+      const timestamp = new Date().toLocaleTimeString();
+      
+      chart.data.labels.push(timestamp);
+      chart.data.datasets[0].data.push(data.co2);
+      chart.data.datasets[1].data.push(data.nh3);
+      chart.data.datasets[2].data.push(data.nox);
+
+      if (chart.data.labels.length > MAX_DATA_POINTS) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach(dataset => dataset.data.shift());
+      }
+
+      chart.update();
+    }
 
     function calculateSensorAverage(data) {
       const values = [data.co2, data.nh3, data.nox].filter(val => val != null && !isNaN(val));
@@ -116,15 +183,11 @@
     }
 
     function updateSensorValue(element, value) {
-      try {
-        if (value != null && !isNaN(value)) {
-          element.querySelector('.flex span:first-child').textContent = value;
-          element.style.display = '';
-        } else {
-          element.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error updating sensor value:', error);
+      if (value != null && !isNaN(value)) {
+        element.querySelector('.flex span:first-child').textContent = value;
+        element.style.display = '';
+      } else {
+        element.style.display = 'none';
       }
     }
 
@@ -132,7 +195,6 @@
       const warningAlert = cardElement.querySelector('.warning-alert');
       if (parseFloat(average) > DANGER_THRESHOLD) {
         warningAlert.classList.remove('hidden');
-        // Add red border to the card when in danger state
         cardElement.classList.add('border-2', 'border-red-500');
       } else {
         warningAlert.classList.add('hidden');
@@ -141,68 +203,63 @@
     }
 
     function createSensorCard(sensorId, data) {
-      try {
-        const template = document.getElementById('sensorCardTemplate');
-        if (!template) {
-          console.error('Template not found');
-          return null;
-        }
-
-        const card = template.content.cloneNode(true);
-        
-        const locationElement = card.querySelector('.location');
-        if (locationElement) {
-          locationElement.textContent = data.location || 'Unknown Location';
-        }
-        
-        // Calculate and update the overall average
-        const sensorAvg = calculateSensorAverage(data);
-        card.querySelector('.sensor-avg').textContent = sensorAvg;
-        
-        // Update warning status
-        updateWarningStatus(card.querySelector('.sensor-card'), sensorAvg);
-        
-        // Update individual values
-        updateSensorValue(card.querySelector('.co2-value'), data.co2);
-        updateSensorValue(card.querySelector('.nh3-value'), data.nh3);
-        updateSensorValue(card.querySelector('.nox-value'), data.nox);
-        
-        return card;
-      } catch (error) {
-        console.error('Error creating sensor card:', error);
-        return null;
-      }
+      const template = document.getElementById('sensorCardTemplate');
+      const card = template.content.cloneNode(true);
+      const cardElement = card.querySelector('.sensor-card');
+      
+      cardElement.id = `sensor-${sensorId}`;
+      
+      const locationElement = card.querySelector('.location');
+      locationElement.textContent = data.location || 'Unknown Location';
+      
+      const sensorAvg = calculateSensorAverage(data);
+      card.querySelector('.sensor-avg').textContent = sensorAvg;
+      
+      updateWarningStatus(cardElement, sensorAvg);
+      
+      updateSensorValue(card.querySelector('.co2-value'), data.co2);
+      updateSensorValue(card.querySelector('.nh3-value'), data.nh3);
+      updateSensorValue(card.querySelector('.nox-value'), data.nox);
+      
+      const chartCanvas = card.querySelector('.sensor-chart');
+      const chart = createChart(chartCanvas);
+      charts.set(sensorId, chart);
+      
+      updateChart(chart, data);
+      
+      return card;
     }
 
     function updateDashboard(sensorData) {
-      try {
-        const container = document.getElementById('sensorContainer');
-        if (!container) {
-          console.error('Container not found');
-          return;
+      const container = document.getElementById('sensorContainer');
+      
+      Object.entries(sensorData).forEach(([sensorId, data]) => {
+        let cardElement = document.getElementById(`sensor-${sensorId}`);
+        
+        if (!cardElement) {
+          const card = createSensorCard(sensorId, data);
+          container.appendChild(card);
+          cardElement = document.getElementById(`sensor-${sensorId}`);
+        } else {
+          const chart = charts.get(sensorId);
+          updateChart(chart, data);
+          
+          const sensorAvg = calculateSensorAverage(data);
+          cardElement.querySelector('.sensor-avg').textContent = sensorAvg;
+          
+          updateWarningStatus(cardElement, sensorAvg);
+          
+          updateSensorValue(cardElement.querySelector('.co2-value'), data.co2);
+          updateSensorValue(cardElement.querySelector('.nh3-value'), data.nh3);
+          updateSensorValue(cardElement.querySelector('.nox-value'), data.nox);
         }
-
-        container.innerHTML = '';
-
-        Object.entries(sensorData).forEach(([sensorId, data]) => {
-          if (data && Object.values(data).some(value => value != null)) {
-            const card = createSensorCard(sensorId, data);
-            if (card) {
-              container.appendChild(card);
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error updating dashboard:', error);
-      }
+      });
     }
 
     async function fetchData() {
       try {
         const response = await fetch('/api/data');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         updateDashboard(data);
       } catch (error) {
@@ -213,9 +270,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       fetchData();
       const interval = setInterval(fetchData, 1000);
-
+      
       window.addEventListener('unload', () => {
         clearInterval(interval);
+        charts.clear();
       });
     });
   </script>
