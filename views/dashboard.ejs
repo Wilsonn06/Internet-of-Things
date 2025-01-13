@@ -63,7 +63,7 @@
             </div>
           </div>
           <div class="bg-purple-50 rounded-lg px-3 py-2">
-            <div class="text-sm text-gray-600">Average</div>
+            <div class="text-sm text-gray-600">Value</div>
             <div class="text-xl font-bold text-purple-600 sensor-avg">-</div>
           </div>
         </div>
@@ -87,7 +87,7 @@
       <!-- Sensor Values -->
       <div class="p-4 space-y-4">
         <div class="co2-value bg-blue-50 rounded-lg p-3">
-          <div class="text-sm text-gray-600 mb-1">Carbon Dioxide (CO₂)</div>
+          <div class="text-sm text-gray-600 mb-1 jenis-gas">Carbon Dioxide (CO₂)</div>
           <div class="flex items-baseline">
             <span class="text-2xl font-bold text-blue-600"></span>
             <span class="ml-1 text-sm text-gray-500">ppm</span>
@@ -119,28 +119,17 @@
     const SENSOR_TIMEOUT = 100;
     const charts = new Map();
     const lastUpdated = new Map();
+    
 
-    function createChart(canvas) {
+    function createChart(canvas, location) {  // Add location parameter
       return new Chart(canvas, {
         type: 'line',
         data: {
           labels: [],
           datasets: [
             {
-              label: 'CO₂',
+              label: location || 'Unknown Location',  // Use location as label
               borderColor: '#3B82F6',
-              data: [],
-              tension: 0.4
-            },
-            {
-              label: 'NH₃',
-              borderColor: '#10B981',
-              data: [],
-              tension: 0.4
-            },
-            {
-              label: 'NOx',
-              borderColor: '#EF4444',
               data: [],
               tension: 0.4
             }
@@ -166,9 +155,6 @@
       
       chart.data.labels.push(timestamp);
       chart.data.datasets[0].data.push(data.co2);
-      chart.data.datasets[1].data.push(data.nh3);
-      chart.data.datasets[2].data.push(data.nox);
-
       if (chart.data.labels.length > MAX_DATA_POINTS) {
         chart.data.labels.shift();
         chart.data.datasets.forEach(dataset => dataset.data.shift());
@@ -193,15 +179,40 @@
       }
     }
 
-    function updateWarningStatus(cardElement, average) {
+    function updateWarningStatus(cardElement, average, jenis_gas) {
       const warningAlert = cardElement.querySelector('.warning-alert');
-      if (parseFloat(average) > DANGER_THRESHOLD) {
-        warningAlert.classList.remove('hidden');
-        cardElement.classList.add('border-2', 'border-red-500');
-      } else {
-        warningAlert.classList.add('hidden');
-        cardElement.classList.remove('border-2', 'border-red-500');
+      if(jenis_gas==="CO2"){
+        if (parseFloat(average) > 400) {
+          warningAlert.classList.remove('hidden');
+          cardElement.classList.add('border-2', 'border-red-500');
+        } else {
+          warningAlert.classList.add('hidden');
+          cardElement.classList.remove('border-2', 'border-red-500');
+        }
+      } else if (jenis_gas==="CO"){
+        if (parseFloat(average) > 25) {
+          warningAlert.classList.remove('hidden');
+          cardElement.classList.add('border-2', 'border-red-500');
+        } else {
+          warningAlert.classList.add('hidden');
+          cardElement.classList.remove('border-2', 'border-red-500');
+        }
+      } else if(jenis_gas==="NH4"){
+        if (parseFloat(average) > 50) {
+          warningAlert.classList.remove('hidden');
+          cardElement.classList.add('border-2', 'border-red-500');
+        } else {
+          warningAlert.classList.add('hidden');
+          cardElement.classList.remove('border-2', 'border-red-500');
+        }
       }
+      // if (parseFloat(average) > DANGER_THRESHOLD) {
+      //   warningAlert.classList.remove('hidden');
+      //   cardElement.classList.add('border-2', 'border-red-500');
+      // } else {
+      //   warningAlert.classList.add('hidden');
+      //   cardElement.classList.remove('border-2', 'border-red-500');
+      // }
     }
 
     function createSensorCard(sensorId, data) {
@@ -212,19 +223,23 @@
       cardElement.id = `sensor-${sensorId}`;
       
       const locationElement = card.querySelector('.location');
-      locationElement.textContent = data.location || 'Unknown Location';
+      locationElement.textContent = data.location || 'Unknown location';
+
+      const jenis_gas = card.querySelector('.jenis-gas');
+      jenis_gas.textContent = data.location;
       
-      const sensorAvg = calculateSensorAverage(data);
+      // const sensorAvg = calculateSensorAverage(data);
+      const sensorAvg = data.co2;
       card.querySelector('.sensor-avg').textContent = sensorAvg;
       
-      updateWarningStatus(cardElement, sensorAvg);
+      updateWarningStatus(cardElement, sensorAvg, data.location);
       
       updateSensorValue(card.querySelector('.co2-value'), data.co2);
       updateSensorValue(card.querySelector('.nh3-value'), data.nh3);
       updateSensorValue(card.querySelector('.nox-value'), data.nox);
       
       const chartCanvas = card.querySelector('.sensor-chart');
-      const chart = createChart(chartCanvas);
+      const chart = createChart(chartCanvas, data.location);
       charts.set(sensorId, chart);
       
       updateChart(chart, data);
@@ -261,10 +276,11 @@
       const chart = charts.get(sensorId);
       updateChart(chart, data);
       
-      const sensorAvg = calculateSensorAverage(data);
+      // const sensorAvg = calculateSensorAverage(data);
+      const sensorAvg = data.co2;
       cardElement.querySelector('.sensor-avg').textContent = sensorAvg;
       
-      updateWarningStatus(cardElement, sensorAvg);
+      updateWarningStatus(cardElement, sensorAvg, data.location);
       
       updateSensorValue(cardElement.querySelector('.co2-value'), data.co2);
       updateSensorValue(cardElement.querySelector('.nh3-value'), data.nh3);

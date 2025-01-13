@@ -57,8 +57,8 @@ client.on('message', (topic, message) => {
       sensorData[sensorId] = {
         data: {
           co2: messageData.co2,
-          nh3: messageData.nh3,
-          nox: messageData.nox,
+          // nh3: messageData.nh3,
+          // nox: messageData.nox,
           location: messageData.location
         },
         lastUpdate: Date.now()

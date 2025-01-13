@@ -13,7 +13,7 @@ password = "public"
 location_name = "Lokasi 2"
 
 # Serial port details (update with your Arduino's port and baud rate)
-arduino_port = "COM10"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
+arduino_port = "COM8"  # Replace with the correct port (e.g., /dev/ttyUSB0 on Linux)
 baud_rate = 9600
 
 try:
@@ -42,17 +42,20 @@ try:
             print(f"Message from Arduino: {arduino_message}")
             
             # Parse the existing message format
-            regex = r"CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)"
+            # regex = r"CO2\s*=\s*([\d.]+)\s*;\s*NH3\s*=\s*([\d.]+)\s*;\s*NOx\s*=\s*([\d.]+)"
+            regex = r"(\w+)\s*:\s*([\d.]+)"
             import re
             match = re.match(regex, arduino_message)
             
             if match:
                 # Create a dictionary with both sensor data and location
                 message_dict = {
-                    "location": location_name,
-                    "co2": float(match.group(1)),
-                    "nh3": float(match.group(2)),
-                    "nox": float(match.group(3))
+                    # "location": location_name,
+                    "location": match.group(1),
+                    # "co2": float(match.group(1)),
+                    # "nh3": float(match.group(2)),
+                    # "nox": float(match.group(3))
+                    "co2": float(match.group(2))
                 }
                 
                 # Convert to JSON string
